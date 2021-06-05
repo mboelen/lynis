@@ -234,7 +234,7 @@
                             osiris)                 OSIRISBINARY="${BINARY}";          LogText "  Found known binary: osiris - ${BINARY}" ;;
                             openssl)                OPENSSLBINARY="${BINARY}";         OPENSSLVERSION=$(${BINARY} version 2> /dev/null | head -n 1 | awk '{ print $2 }' | xargs); LogText "Found ${BINARY} (version ${OPENSSLVERSION})" ;;
                             pacman)
-                                if [ -z "$(echo "${BINARY}" | grep -E "/usr(/local)?/games")" ]; then
+                                if [ -z "$(echo "${BINARY}" | egrep "/usr(/local)?/games")" ]; then
                                     PACMANBINARY="${BINARY}"
                                     LogText "  Found known binary: pacman (package manager) - ${BINARY}"
                                 fi
@@ -324,6 +324,19 @@
             fi
         done
 
+        if [ $OS = "Solaris" ]; then
+            # awk is the simple awk by default
+            if [ "${AWKBINARY:-}" = /usr/bin/awk ] && [ -f /usr/bin/nawk ]; then
+                LogText "Result: Using nawk instead of awk, because the default Solaris awk is not sufficient for Lynis."
+                AWKBINARY=/usr/bin/nawk
+            fi
+
+            # Use grep that supports -E
+            if [ "${GREPBINARY:-}" = /usr/bin/grep ] [ -f /usr/xpg4/bin/grep ]; then
+                GREPBINARY=/usr/xpg4/bin/grep
+            fi
+        fi
+
         # unset SORTED_BIN_PATHS
         BINARY_SCAN_FINISHED=1
         BINARY_PATHS_FOUND=$(echo ${BINARY_PATHS_FOUND} | sed 's/^, //g' | sed 's/, /,/g')
@@ -340,7 +353,7 @@
         [ "${AWKBINARY:-}" ] || ExitFatal "awk binary not found"
         [ "${CAT_BINARY:-}" ] || ExitFatal "cat binary not found"
         [ "${CUTBINARY:-}" ] || ExitFatal "cut binary not found"
-        [ "${EGREPBINARY:-}" ] || ExitFatal "grep binary not found"
+        [ "${EGREPBINARY:-}" ] || ExitFatal "egrep binary not found"
         [ "${FINDBINARY:-}" ] || ExitFatal "find binary not found"
         [ "${GREPBINARY:-}" ] || ExitFatal "grep binary not found"
         [ "${HEADBINARY:-}" ] || ExitFatal "head binary not found"
